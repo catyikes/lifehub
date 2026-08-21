@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Passungsrechner – Einheitsbohrung</title>
+  <style>
+    :root {
+      --bg: #edf2f7;
+      --card: #ffffff;
+      --primary: #0b5cab;
+      --primary-dark: #063c72;
+      --text: #17212b;
+      --muted: #617080;
+      --border: #d6dee7;
+      --success: #16803c;
+      --warning: #a95b00;
+      --danger: #b42318;
+      --hole: #1769aa;
+      --shaft: #d64b36;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top right, #d8ebfc 0, transparent 32rem),
+        var(--bg);
+    }
+
+    .container {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 32px 20px 48px;
+    }
+
+    .header {
+      margin-bottom: 24px;
+    }
+
+    .header__eyebrow {
+      margin: 0 0 8px;
+      color: var(--primary);
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.75rem, 4vw, 2.45rem);
+      color: var(--primary-dark);
+    }
+
+    .header__text {
+      max-width: 760px;
+      margin: 10px 0 0;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(290px, 0.85fr) minmax(360px, 1.15fr);
+      gap: 22px;
+      align-items: start;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(176, 192, 208, 0.65);
+      border-radius: 16px;
+      box-shadow: 0 12px 30px rgba(35, 55, 75, 0.1);
+      overflow: hidden;
+    }
+
+    .card__header {
+      padding: 18px 22px;
+      color: white;
+      background: linear-gradient(125deg, var(--primary-dark), var(--primary));
+    }
+
+    .card__header h2 {
+      margin: 0;
+      font-size: 1.08rem;
+    }
+
+    .card__body {
+      padding: 22px;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 7px;
+      color: #344454;
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .input-wrap {
+      position: relative;
+    }
+
+    input,
+    select {
+      width: 100%;
+      min-height: 46px;
+      padding: 11px 46px 11px 13px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      outline: none;
+      color: var(--text);
+      font: inherit;
+      background: #fff;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    select {
+      padding-right: 13px;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(11, 92, 171, 0.14);
+    }
+
+    .unit {
+      position: absolute;
+      top: 50%;
+      right: 14px;
+      transform: translateY(-50%);
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-weight: 700;
+      pointer-events: none;
+    }
+
+    .hint {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 0.79rem;
+      line-height: 1.4;
+    }
+
+    .selection-info {
+      margin-top: 20px;
+      padding: 14px;
+      border-left: 4px solid var(--primary);
+      border-radius: 6px;
+      color: #38506a;
+      font-size: 0.87rem;
+      line-height: 1.5;
+      background: #edf6ff;
+    }
+
+    .fit-name {
+      margin: 0 0 4px;
+      font-size: 1.55rem;
+      font-weight: 800;
+      color: var(--primary-dark);
+    }
+
+    .fit-description {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      margin-top: 16px;
+      padding: 7px 11px;
+      border-radius: 999px;
+      font-size: 0.84rem;
+      font-weight: 800;
+    }
+
+    .status--success {
+      color: #116b32;
+      background: #e7f6ec;
+    }
+
+    .status--warning {
+      color: #8b4c00;
+      background: #fff2df;
+    }
+
+    .status--danger {
+      color: #9f2419;
+      background: #ffebe9;
+    }
+
+    .status--neutral {
+      color: #36516a;
+      background: #edf2f7;
+    }
+
+    .dimension-list {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin: 20px 0;
+    }
+
+    .dimension {
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fbfcfe;
+    }
+
+    .dimension__label {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 7px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .dot--hole {
+      background: var(--hole);
+    }
+
+    .dot--shaft {
+      background: var(--shaft);
+    }
+
+    .dimension__value {
+      font-size: 1.08rem;
+      font-weight: 800;
+    }
+
+    .dimension__subvalue {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .result-box {
+      margin-top: 4px;
+      padding: 17px;
+      border-radius: 11px;
+      color: white;
+      background: linear-gradient(125deg, #123e69, #0b5cab);
+    }
+
+    .result-box__label {
+      margin-bottom: 5px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      opacity: 0.82;
+    }
+
+    .result-box__value {
+      font-size: 1.25rem;
+      font-weight: 800;
+    }
+
+    .visual-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 26px 0 12px;
+    }
+
+    .visual-title h3 {
+      margin: 0;
+      color: var(--primary-dark);
+      font-size: 1rem;
+    }
+
+    .zero-label {
+      color: var(--muted);
+      font-size: 0.77rem;
+    }
+
+    .visual {
+      padding: 20px 16px 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: linear-gradient(to bottom, #fbfdff, #f5f8fb);
+    }
+
+    .scale {
+      position: relative;
+      height: 134px;
+      border-bottom: 1px solid #aebdca;
+    }
+
+    .zero-line {
+      position: absolute;
+      z-index: 1;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: #526476;
+    }
+
+    .zero-line::after {
+      position: absolute;
+      top: -17px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #526476;
+      font-size: 0.73rem;
+      font-weight: 700;
+      content: "Nulllinie";
+      white-space: nowrap;
+    }
+
+    .tolerance-zone {
+      position: absolute;
+      z-index: 2;
+      min-width: 10px;
+      border-radius: 5px;
+      opacity: 0.92;
+      transition: all 0.25s ease;
+    }
+
+    .zone-hole {
+      top: 29px;
+      height: 30px;
+      background: var(--hole);
+    }
+
+    .zone-shaft {
+      top: 82px;
+      height: 30px;
+      background: var(--shaft);
+    }
+
+    .zone-label {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 0.73rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .footer-note {
+      margin: 18px 0 0;
+      color: var(--muted);
+      font-size: 0.77rem;
+      line-height: 1.5;
+    }
+
+    .error {
+      display: none;
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: #9f2419;
+      font-size: 0.84rem;
+      background: #ffebe9;
+    }
+
+    .error.is-visible {
+      display: block;
+    }
+
+    @media (max-width: 820px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 430px) {
+      .dimension-list {
+        grid-template-columns: 1fr;
+      }
+
+      .container {
+        padding: 20px 14px 36px;
+      }
+
+      .card__body {
+        padding: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <header class="header">
+      <p class="header__eyebrow">ISO-Passungen</p>
+      <h1>Passungsrechner – Einheitsbohrung</h1>
+      <p class="header__text">
+        Auswahl und Darstellung von Passungen mit Bohrungstoleranzfeld H7.
+        Die Toleranzzonen werden bezogen auf die Nulllinie dargestellt.
+      </p>
+    </header>
+
+    <section class="grid">
+      <article class="card">
+        <div class="card__header">
+          <h2>Eingabedaten</h2>
+        </div>
+
+        <div class="card__body">
+          <div class="form-group">
+            <label for="boreDiameter">Bohrungsdurchmesser (Nennmaß)</label>
+            <div class="input-wrap">
+              <input id="boreDiameter" type="number" min="1" max="500" step="0.001" value="20" />
+              <span class="unit">mm</span>
+            </div>
+            <p class="hint">Gültiger Bereich der vereinfachten Berechnung: 1 bis 500 mm.</p>
+          </div>
+
+          <div class="form-group">
+            <label for="shaftDiameter">Wellendurchmesser (Nennmaß)</label>
+            <div class="input-wrap">
+              <input id="shaftDiameter" type="number" min="1" max="500" step="0.001" value="20" />
+              <span class="unit">mm</span>
+            </div>
+            <p class="hint">Für eine reguläre Passung müssen Bohrung und Welle dasselbe Nennmaß haben.</p>
+          </div>
+
+          <div class="form-group">
+            <label for="fitType">Passungsart</label>
+            <select id="fitType">
+              <option value="g6">Spielpassung – H7/g6</option>
+              <option value="h6">Spielpassung – H7/h6</option>
+              <option value="js6">Übergangspassung – H7/js6</option>
+              <option value="k6">Übergangspassung – H7/k6</option>
+              <option value="m6">Übergangspassung – H7/m6</option>
+              <option value="p6">Übermaßpassung – H7/p6</option>
+              <option value="s6">Übermaßpassung – H7/s6</option>
+            </select>
+          </div>
+
+          <div id="selectionInfo" class="selection-info"></div>
+          <div id="inputError" class="error"></div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card__header">
+          <h2>Ergebnis</h2>
+        </div>
+
+        <div class="card__body">
+          <p id="fitName" class="fit-name">H7/g6</p>
+          <p id="fitDescription" class="fit-description"></p>
+
+          <div id="status" class="status status--neutral"></div>
+
+          <div class="dimension-list">
+            <div class="dimension">
+              <div class="dimension__label">
+                <span class="dot dot--hole"></span>
+                Bohrung H7
+              </div>
+              <div id="holeLimits" class="dimension__value">–</div>
+              <div id="holeDeviation" class="dimension__subvalue">–</div>
+            </div>
+
+            <div class="dimension">
+              <div class="dimension__label">
+                <span class="dot dot--shaft"></span>
+                Welle
+              </div>
+              <div id="shaftLimits" class="dimension__value">–</div>
+              <div id="shaftDeviation" class="dimension__subvalue">–</div>
+            </div>
+          </div>
+
+          <div class="result-box">
+            <div class="result-box__label">Spiel / Übermaß</div>
+            <div id="clearanceResult" class="result-box__value">–</div>
+          </div>
+
+          <div class="visual-title">
+            <h3>Darstellung der Toleranzzonen</h3>
+            <span class="zero-label">Angaben in µm</span>
+          </div>
+
+          <div class="visual">
+            <div class="scale">
+              <div id="zeroLine" class="zero-line"></div>
+              <div id="holeZone" class="tolerance-zone zone-hole">
+                <span id="holeZoneLabel" class="zone-label">H7</span>
+              </div>
+              <div id="shaftZone" class="tolerance-zone zone-shaft">
+                <span id="shaftZoneLabel" class="zone-label">g6</span>
+              </div>
+            </div>
+
+            <div class="legend">
+              <span class="legend-item"><span class="dot dot--hole"></span> Bohrung</span>
+              <span class="legend-item"><span class="dot dot--shaft"></span> Welle</span>
+              <span class="legend-item">Vertikale Linie: Nennmaß / Nulllinie</span>
+            </div>
+          </div>
+
+          <p class="footer-note">
+            Hinweis: Die Berechnung dient der technischen Vorauswahl. Bei Zeichnungsfreigaben
+            sind die vollständigen Werte aus DIN EN ISO 286 sowie die projektspezifischen
+            Anforderungen heranzuziehen.
+          </p>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const boreInput = document.getElementById("boreDiameter");
+    const shaftInput = document.getElementById("shaftDiameter");
+    const fitTypeInput = document.getElementById("fitType");
+
+    const fitData = {
+      g6: {
+        label: "H7/g6",
+        type: "Spielpassung",
+        description: "Sichere Spielpassung für leichtgängige, verschiebbare oder drehbare Verbindungen."
+      },
+      h6: {
+        label: "H7/h6",
+        type: "Spielpassung",
+        description: "Passung mit Mindestspiel Null; geeignet für präzise Führungen und lösbare Verbindungen."
+      },
+      js6: {
+        label: "H7/js6",
+        type: "Übergangspassung",
+        description: "Je nach Istmaß entsteht ein geringes Spiel oder ein geringes Übermaß."
+      },
+      k6: {
+        label: "H7/k6",
+        type: "Übergangspassung",
+        description: "Übergangspassung mit Tendenz zu leichtem Übermaß."
+      },
+      m6: {
+        label: "H7/m6",
+        type: "Übergangspassung",
+        description: "Übergangspassung für zentrierende Verbindungen mit möglichem Übermaß."
+      },
+      p6: {
+        label: "H7/p6",
+        type: "Übermaßpassung",
+        description: "Presspassung für feste, meist nicht ohne Hilfsmittel lösbare Verbindungen."
+      },
+      s6: {
+        label: "H7/s6",
+        type: "Übermaßpassung",
+        description: "Starke Presspassung für hoch belastete, dauerhaft feste Verbindungen."
+      }
+    };
+
+    /*
+      ISO-286-Toleranzwerte in µm für die vereinfachte Auswahl.
+      Spalten: obere Größenstufe, IT6, IT7
+    */
+    const toleranceTable = [
+      { max: 3, it6: 6, it7: 10 },
+      { max: 6, it6: 8, it7: 12 },
+      { max: 10, it6: 9, it7: 15 },
+      { max: 18, it6: 11, it7: 18 },
+      { max: 30, it6: 13, it7: 21 },
+      { max: 50, it6: 16, it7: 25 },
+      { max: 80, it6: 19, it7: 30 },
+      { max: 120, it6: 22, it7: 35 },
+      { max: 180, it6: 25, it7: 40 },
+      { max: 250, it6: 29, it7: 46 },
+      { max: 315, it6: 32, it7: 52 },
+      { max: 400, it6: 36, it7: 57 },
+      { max: 500, it6: 40, it7: 63 }
+    ];
+
+    function getTolerance(diameter) {
+      return toleranceTable.find(entry => diameter <= entry.max);
+    }
+
+    function formatNumber(value, decimals = 3) {
+      return Number(value).toLocaleString("de-DE", {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+      });
+    }
+
+    function formatMicrometer(value) {
+      const sign = value > 0 ? "+" : "";
+      return `${sign}${Math.round(value)} µm`;
+    }
+
+    function getShaftDeviations(fit, diameter, it6) {
+      let upperDeviation;
+
+      switch (fit) {
+        case "g6":
+          upperDeviation = -Math.round(2.5 * Math.pow(diameter, 0.34) + 1);
+          break;
+
+        case "h6":
+          upperDeviation = 0;
+          break;
+
+        case "js6":
+          return {
+            lower: -Math.round(it6 / 2),
+            upper: Math.round(it6 / 2)
+          };
+
+        case "k6":
+          upperDeviation = Math.max(2, Math.round(1.4 * Math.pow(diameter, 0.34)));
+          break;
+
+        case "m6":
+          upperDeviation = Math.max(4, Math.round(4.0 * Math.pow(diameter, 0.34)));
+          break;
+
+        case "p6":
+          upperDeviation = Math.max(10, Math.round(7.5 * Math.pow(diameter, 0.34)));
+          break;
+
+        case "s6":
+          upperDeviation = Math.max(18, Math.round(12.5 * Math.pow(diameter, 0.34)));
+          break;
+
+        default:
+          upperDeviation = 0;
+      }
+
+      return {
+        lower: upperDeviation - it6,
+        upper: upperDeviation
+      };
+    }
+
+    function setStatus(type, text) {
+      const status = document.getElementById("status");
+      status.className = `status status--${type}`;
+      status.textContent = text;
+    }
+
+    function updateVisualization(holeLower, holeUpper, shaftLower, shaftUpper, fit) {
+      const values = [holeLower, holeUpper, shaftLower, shaftUpper, 0];
+      const minValue = Math.min(...values);
+      const maxValue = Math.max(...values);
+      const padding = Math.max(10, (maxValue - minValue) * 0.3);
+      const scaleMin = minValue - padding;
+      const scaleMax = maxValue + padding;
+      const range = scaleMax - scaleMin;
+
+      const position = value => ((value - scaleMin) / range) * 100;
+      const width = (lower, upper) => Math.max(((upper - lower) / range) * 100, 1.8);
+
+      const zeroLine = document.getElementById("zeroLine");
+      const holeZone = document.getElementById("holeZone");
+      const shaftZone = document.getElementById("shaftZone");
+
+      zeroLine.style.left = `${position(0)}%`;
+
+      holeZone.style.left = `${position(holeLower)}%`;
+      holeZone.style.width = `${width(holeLower, holeUpper)}%`;
+
+      shaftZone.style.left = `${position(shaftLower)}%`;
+      shaftZone.style.width = `${width(shaftLower, shaftUpper)}%`;
+
+      document.getElementById("holeZoneLabel").textContent = "H7";
+      document.getElementById("shaftZoneLabel").textContent = fit;
+    }
+
+    function calculateFit() {
+      const boreDiameter = Number(boreInput.value);
+      const shaftDiameter = Number(shaftInput.value);
+      const fit = fitTypeInput.value;
+      const errorBox = document.getElementById("inputError");
+
+      errorBox.classList.remove("is-visible");
+
+      if (
+        !Number.isFinite(boreDiameter) ||
+        !Number.isFinite(shaftDiameter) ||
+        boreDiameter < 1 ||
+        boreDiameter > 500 ||
+        shaftDiameter < 1 ||
+        shaftDiameter > 500
+      ) {
+        errorBox.textContent = "Bitte Nennmaße zwischen 1 mm und 500 mm eingeben.";
+        errorBox.classList.add("is-visible");
+        return;
+      }
+
+      const tolerance = getTolerance(boreDiameter);
+      const it7 = tolerance.it7;
+      const it6 = tolerance.it6;
+      const shaftDeviation = getShaftDeviations(fit, boreDiameter, it6);
+
+      const holeLowerDeviation = 0;
+      const holeUpperDeviation = it7;
+
+      const holeLowerLimit = boreDiameter + holeLowerDeviation / 1000;
+      const holeUpperLimit = boreDiameter + holeUpperDeviation / 1000;
+
+      const shaftLowerLimit = shaftDiameter + shaftDeviation.lower / 1000;
+      const shaftUpperLimit = shaftDiameter + shaftDeviation.upper / 1000;
+
+      const minClearance = (holeLowerLimit - shaftUpperLimit) * 1000;
+      const maxClearance = (holeUpperLimit - shaftLowerLimit) * 1000;
+
+      const info = fitData[fit];
+
+      document.getElementById("fitName").textContent = info.label;
+      document.getElementById("fitDescription").textContent = info.description;
+
+      document.getElementById("selectionInfo").innerHTML = `
+        <strong>${info.type}</strong><br>
+        Ausgewählte Kombination: Bohrung <strong>H7</strong> und Welle <strong>${fit}</strong>.
+      `;
+
+      document.getElementById("holeLimits").textContent =
+        `${formatNumber(holeLowerLimit)} – ${formatNumber(holeUpperLimit)} mm`;
+
+      document.getElementById("holeDeviation").textContent =
+        `Abmaße: ${formatMicrometer(holeLowerDeviation)} / ${formatMicrometer(holeUpperDeviation)}`;
+
+      document.getElementById("shaftLimits").textContent =
+        `${formatNumber(shaftLowerLimit)} – ${formatNumber(shaftUpperLimit)} mm`;
+
+      document.getElementById("shaftDeviation").textContent =
+        `Abmaße: ${formatMicrometer(shaftDeviation.lower)} / ${formatMicrometer(shaftDeviation.upper)}`;
+
+      const clearanceResult = document.getElementById("clearanceResult");
+
+      if (minClearance >= 0) {
+        clearanceResult.textContent =
+          `Spiel: ${formatMicrometer(minClearance)} bis ${formatMicrometer(maxClearance)}`;
+        setStatus("success", "Sichere Spielpassung");
+      } else if (maxClearance <= 0) {
+        clearanceResult.textContent =
+          `Übermaß: ${formatMicrometer(Math.abs(maxClearance))} bis ${formatMicrometer(Math.abs(minClearance))}`;
+        setStatus("danger", "Sichere Übermaßpassung");
+      } else {
+        clearanceResult.textContent =
+          `Spiel / Übermaß: ${formatMicrometer(minClearance)} bis ${formatMicrometer(maxClearance)}`;
+        setStatus("warning", "Übergangspassung");
+      }
+
+      if (Math.abs(boreDiameter - shaftDiameter) > 0.0001) {
+        setStatus("warning", "Nennmaße von Bohrung und Welle weichen voneinander ab");
+      }
+
+      updateVisualization(
+        holeLowerDeviation,
+        holeUpperDeviation,
+        shaftDeviation.lower,
+        shaftDeviation.upper,
+        fit
+      );
+    }
+
+    [boreInput, shaftInput, fitTypeInput].forEach(element => {
+      element.addEventListener("input", calculateFit);
+      element.addEventListener("change", calculateFit);
+    });
+
+    calculateFit();
+  </script>
+</body>
+</html>
